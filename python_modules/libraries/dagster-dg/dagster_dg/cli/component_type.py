@@ -38,8 +38,7 @@ def component_type_scaffold_command(
     """
     cli_config = normalize_cli_config(global_options, context)
     dg_context = DgContext.from_config_file_discovery_and_cli_config(Path.cwd(), cli_config)
-    if not dg_context.is_code_location:
-        exit_with_error("This command must be run inside a Dagster code location directory.")
+    dg_context.validate_component_library_command_environment()
     registry = RemoteComponentRegistry.from_dg_context(dg_context)
     full_component_name = f"{dg_context.root_package_name}.{name}"
     if registry.has_global(full_component_name):
@@ -65,6 +64,7 @@ def component_type_docs_command(
     """Get detailed information on a registered Dagster component type."""
     cli_config = normalize_cli_config(global_options, context)
     dg_context = DgContext.from_config_file_discovery_and_cli_config(Path.cwd(), cli_config)
+    dg_context.validate_registry_command_environment()
     registry = RemoteComponentRegistry.from_dg_context(dg_context)
     if not registry.has_global(component_type):
         exit_with_error(f"No component type `{component_type}` could be resolved.")
@@ -95,6 +95,7 @@ def component_type_info_command(
     """Get detailed information on a registered Dagster component type."""
     cli_config = normalize_cli_config(global_options, context)
     dg_context = DgContext.from_config_file_discovery_and_cli_config(Path.cwd(), cli_config)
+    dg_context.validate_registry_command_environment()
     registry = RemoteComponentRegistry.from_dg_context(dg_context)
     if not registry.has_global(component_type):
         exit_with_error(f"No component type `{component_type}` could be resolved.")
@@ -151,6 +152,7 @@ def component_type_list(context: click.Context, **global_options: object) -> Non
     """List registered Dagster components in the current code location environment."""
     cli_config = normalize_cli_config(global_options, context)
     dg_context = DgContext.from_config_file_discovery_and_cli_config(Path.cwd(), cli_config)
+    dg_context.validate_registry_command_environment()
     registry = RemoteComponentRegistry.from_dg_context(dg_context)
     for key in sorted(registry.global_keys()):
         click.echo(key)

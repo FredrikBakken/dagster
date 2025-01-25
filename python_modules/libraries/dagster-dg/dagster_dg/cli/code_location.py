@@ -111,8 +111,7 @@ def code_location_list_command(context: click.Context, **global_options: object)
     """List code locations in the current deployment."""
     cli_config = normalize_cli_config(global_options, context)
     dg_context = DgContext.from_config_file_discovery_and_cli_config(Path.cwd(), cli_config)
-    if not dg_context.is_deployment:
-        exit_with_error("This command must be run inside a Dagster deployment directory.")
+    dg_context.validate_deployment_command_environment()
 
     for code_location in dg_context.get_code_location_names():
         click.echo(code_location)
