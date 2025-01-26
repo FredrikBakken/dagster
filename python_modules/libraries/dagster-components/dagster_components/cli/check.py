@@ -19,11 +19,6 @@ from dagster_components.core.component_defs_builder import (
     path_to_decl_node,
     resolve_decl_node_to_yaml_decls,
 )
-from dagster_components.core.deployment import (
-    CodeLocationProjectContext,
-    find_enclosing_code_location_root_path,
-    is_inside_code_location_project,
-)
 from dagster_components.utils import CLI_BUILTIN_COMPONENT_LIB_KEY
 
 if TYPE_CHECKING:
@@ -144,49 +139,34 @@ def check_component_command(ctx: click.Context, paths: Sequence[str]) -> None:
     path_objs = [p.parent if p.is_file() else p for p in path_objs]
 
     builtin_component_lib = ctx.obj.get(CLI_BUILTIN_COMPONENT_LIB_KEY, False)
-    if not is_inside_code_location_project(Path.cwd()):
-        click.echo(
-            click.style(
-                "This command must be run inside a Dagster code location project.", fg="red"
-            )
-        )
-        sys.exit(1)
-
     validation_errors: list[tuple[Union[type[Component], None], ValidationError]] = []
 
-    context = CodeLocationProjectContext.from_code_location_path(
-        find_enclosing_code_location_root_path(Path.cwd()),
-        ComponentTypeRegistry.from_entry_point_discovery(
-            builtin_component_lib=builtin_component_lib
-        ),
+    registry = ComponentTypeRegistry.from_entry_point_discovery(
+        builtin_component_lib=builtin_component_lib
     )
 
-    for instance_path in Path(context.components_path).iterdir():
+    for path in path_objs:
         try:
-            decl_node = path_to_decl_node(path=instance_path)
+            decl_node = path_to_decl_node(path)
         except ValidationError as e:
             validation_errors.append((None, e))
             continue
 
         if not decl_node:
-            raise Exception(f"No component found at path {instance_path}")
+            raise Exception(f"No component found at path {path}")
 
         yaml_decls = resolve_decl_node_to_yaml_decls(decl_node)
         for yaml_decl in yaml_decls:
-            decl_path = yaml_decl.path.resolve()
-            if not any((path == decl_path or path in decl_path.parents) for path in path_objs):
-                continue
-
             clc = ComponentLoadContext(
                 resources={},
-                registry=context.component_registry,
+                registry=registry,
                 decl_node=yaml_decl,
                 templated_value_resolver=TemplatedValueResolver.default(),
             )
             try:
                 decl_node.load(clc)
             except ValidationError as e:
-                component_type = yaml_decl.get_component_type(context.component_registry)
+                component_type = yaml_decl.get_component_type(registry)
                 validation_errors.append((component_type, e))
 
     if validation_errors:
