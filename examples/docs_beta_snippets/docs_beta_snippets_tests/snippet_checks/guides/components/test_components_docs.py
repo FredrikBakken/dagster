@@ -269,6 +269,12 @@ params:
     key: "target/main/{{ node.name }}"
 """,
         )
+        run_command_and_snippet_output(
+            cmd="dg component check",
+            snippet_path=COMPONENTS_SNIPPETS_DIR
+            / f"{next_snip_no()}-dg-component-check.txt",
+            update_snippets=update_snippets,
+        )
 
         # Run dbt, check works
         _run_command(

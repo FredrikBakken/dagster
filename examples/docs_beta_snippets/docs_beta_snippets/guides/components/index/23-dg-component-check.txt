@@ -1,0 +1,3 @@
+$ dg component check --disable-cache
+
+All components validated successfully.
