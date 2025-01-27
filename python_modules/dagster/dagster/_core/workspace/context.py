@@ -83,8 +83,10 @@ if TYPE_CHECKING:
 
 T = TypeVar("T")
 
+
 def _get_webserver_grpc_server_heartbeat_ttl() -> int:
     return int(os.getenv("DAGSTER_WEBSERVER_GRPC_SERVER_HEARTBEAT_TTL", "45"))
+
 
 WEBSERVER_GRPC_SERVER_HEARTBEAT_TTL = _get_webserver_grpc_server_heartbeat_ttl()
 
